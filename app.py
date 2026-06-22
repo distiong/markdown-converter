@@ -6,6 +6,7 @@ import shutil
 import tempfile
 import threading
 import urllib.parse
+import ctypes
 from pathlib import Path
 from flask import Flask, render_template, request, jsonify, send_file, send_from_directory
 from converter import convert_file, convert_directory
@@ -228,6 +229,17 @@ def convert_folder():
         'success': len(results),
         'output_dir': output_dir
     })
+
+
+@app.route('/api/shutdown', methods=['POST'])
+def shutdown():
+    import signal
+    func = request.environ.get('werkzeug.server.shutdown')
+    if func:
+        func()
+    else:
+        threading.Thread(target=lambda: (os._exit(0))).start()
+    return jsonify({'status': 'shutting down'})
 
 
 def create_templates():

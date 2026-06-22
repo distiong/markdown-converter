@@ -23,10 +23,29 @@
             text-align: center;
             color: white;
             margin-bottom: 30px;
+            position: relative;
         }
 
         .header h1 { font-size: 2em; margin-bottom: 8px; text-shadow: 0 2px 4px rgba(0,0,0,0.2); }
         .header p { opacity: 0.9; font-size: 1.1em; }
+
+        .btn-exit {
+            position: absolute;
+            top: 0;
+            right: 0;
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.2);
+            color: white;
+            border: 1px solid rgba(255,255,255,0.4);
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background 0.2s;
+        }
+
+        .btn-exit:hover {
+            background: rgba(255,255,255,0.35);
+        }
 
         .card {
             background: white;
@@ -307,6 +326,7 @@
 <body>
     <div class="container">
         <div class="header">
+            <button class="btn-exit" onclick="shutdownApp()">Exit</button>
             <h1>Markdown Converter</h1>
             <p>Convert Markdown files to PDF and Word formats</p>
         </div>
@@ -571,6 +591,18 @@
                 status.innerHTML = '<span class="status-badge badge-warning">Using xhtml2pdf fallback (install wkhtmltopdf for better quality)</span>';
             }
         });
+
+        function shutdownApp() {
+            if (confirm('Are you sure you want to exit?')) {
+                fetch('/api/shutdown', { method: 'POST' })
+                    .then(() => {
+                        document.body.innerHTML = '<div style="text-align:center;padding:100px;color:white;font-size:1.5em;">Application closed. You can close this tab.</div>';
+                    })
+                    .catch(() => {
+                        document.body.innerHTML = '<div style="text-align:center;padding:100px;color:white;font-size:1.5em;">Application closed. You can close this tab.</div>';
+                    });
+            }
+        }
     </script>
 </body>
 </html>
