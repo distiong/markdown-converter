@@ -1,8 +1,18 @@
-import os
 import sys
+import os
+
+
+def get_resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_path)
+
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+
+from app import app, create_templates
 import webbrowser
 import threading
-from app import app, create_templates
 
 
 def open_browser():
@@ -12,13 +22,13 @@ def open_browser():
 
 
 if __name__ == '__main__':
-    create_templates()
+    templates_dir = get_resource_path('templates')
+    os.makedirs(templates_dir, exist_ok=True)
+
     print("=" * 60)
-    print("  Markdown Converter - Web Interface")
-    print("  ")
+    print("  Markdown Converter")
     print("  Open http://localhost:5000 in your browser")
-    print("  ")
-    print("  Press Ctrl+C to stop the server")
+    print("  Press Ctrl+C to stop")
     print("=" * 60)
 
     threading.Thread(target=open_browser, daemon=True).start()

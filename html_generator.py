@@ -1,11 +1,19 @@
 import os
+import sys
 import re
 import markdown
 from image_handler import resolve_images
 from math_handler import extract_and_render_math, math_to_text
 from diagram_handler import extract_and_render_diagrams, diagrams_to_code_block
 
-DEFAULT_CSS_PATH = os.path.join(os.path.dirname(__file__), 'styles', 'default.css')
+
+def _resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_path)
+
+
+DEFAULT_CSS_PATH = _resource_path(os.path.join('styles', 'default.css'))
 
 
 def md_to_html(md_text, md_file_dir=None, cache_dir=None, render_math=True, render_diagrams=True):

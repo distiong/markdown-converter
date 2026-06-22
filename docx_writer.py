@@ -179,23 +179,28 @@ def _add_code_block(doc, code, lang):
         run.font.size = Pt(9)
         run.font.color.rgb = RGBColor(0x66, 0x66, 0x66)
 
-    p = doc.add_paragraph()
-    p.style = doc.styles['Normal']
-    pPr = p._element.get_or_add_pPr()
-    shading = pPr.makeelement(qn('w:shd'), {
-        qn('w:val'): 'clear',
-        qn('w:color'): 'auto',
-        qn('w:fill'): 'F5F5F5',
-    })
-    pPr.append(shading)
+    for line in code.split('\n'):
+        p = doc.add_paragraph()
+        p.style = doc.styles['Normal']
+        pPr = p._element.get_or_add_pPr()
+        shading = pPr.makeelement(qn('w:shd'), {
+            qn('w:val'): 'clear',
+            qn('w:color'): 'auto',
+            qn('w:fill'): 'F0F0F0',
+        })
+        pPr.append(shading)
 
-    pf = p.paragraph_format
-    pf.left_indent = Cm(0.5)
-    pf.right_indent = Cm(0.5)
+        pf = p.paragraph_format
+        pf.left_indent = Cm(0.5)
+        pf.right_indent = Cm(0.5)
+        pf.space_before = Pt(0)
+        pf.space_after = Pt(0)
+        pf.line_spacing = Pt(14)
 
-    run = p.add_run(code)
-    run.font.name = 'Consolas'
-    run.font.size = Pt(9)
+        run = p.add_run(line if line else ' ')
+        run.font.name = 'Consolas'
+        run.font.size = Pt(9)
+        run.element.rPr.rFonts.set(qn('w:eastAsia'), 'Microsoft YaHei')
 
 
 def _add_blockquote(doc, text):
@@ -204,9 +209,9 @@ def _add_blockquote(doc, text):
     pBdr = pPr.makeelement(qn('w:pBdr'), {})
     left_bdr = pBdr.makeelement(qn('w:left'), {
         qn('w:val'): 'single',
-        qn('w:sz'): '12',
-        qn('w:space'): '4',
-        qn('w:color'): 'CCCCCC',
+        qn('w:sz'): '18',
+        qn('w:space'): '8',
+        qn('w:color'): '4A90D9',
     })
     pBdr.append(left_bdr)
     pPr.append(pBdr)
@@ -215,8 +220,10 @@ def _add_blockquote(doc, text):
     pf.left_indent = Cm(1)
 
     run = p.add_run(text)
-    run.font.color.rgb = RGBColor(0x66, 0x66, 0x66)
+    run.font.color.rgb = RGBColor(0x55, 0x55, 0x55)
     run.italic = True
+    run.font.name = 'Microsoft YaHei'
+    run.element.rPr.rFonts.set(qn('w:eastAsia'), 'Microsoft YaHei')
 
 
 def _add_table(doc, table_lines):
@@ -247,10 +254,29 @@ def _add_table(doc, table_lines):
         for j, cell_text in enumerate(row_data):
             if j < cols:
                 cell = table.cell(i, j)
-                cell.text = cell_text
+                cell.text = ''
+                p = cell.paragraphs[0]
+                run = p.add_run(cell_text)
+                run.font.name = 'Microsoft YaHei'
+                run.font.size = Pt(10)
+                run.element.rPr.rFonts.set(qn('w:eastAsia'), 'Microsoft YaHei')
+
                 if i == 0:
-                    for run in cell.paragraphs[0].runs:
-                        run.bold = True
+                    run.bold = True
+                    run.font.size = Pt(10)
+                    shading = cell._element.get_or_add_tcPr().makeelement(qn('w:shd'), {
+                        qn('w:val'): 'clear',
+                        qn('w:color'): 'auto',
+                        qn('w:fill'): 'E8E8E8',
+                    })
+                    cell._element.get_or_add_tcPr().append(shading)
+                elif i % 2 == 0:
+                    shading = cell._element.get_or_add_tcPr().makeelement(qn('w:shd'), {
+                        qn('w:val'): 'clear',
+                        qn('w:color'): 'auto',
+                        qn('w:fill'): 'F8F8F8',
+                    })
+                    cell._element.get_or_add_tcPr().append(shading)
 
 
 def _add_list_item(doc, text, list_type, indent):

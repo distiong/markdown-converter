@@ -12,7 +12,18 @@ from converter import convert_file, convert_directory
 from pdf_writer import check_wkhtmltopdf
 from html_generator import md_file_to_html
 
-app = Flask(__name__)
+
+def _resource_path(relative_path):
+    if hasattr(sys, '_MEIPASS'):
+        return os.path.join(sys._MEIPASS, relative_path)
+    return os.path.join(os.path.dirname(os.path.abspath(__file__)), relative_path)
+
+
+app = Flask(
+    __name__,
+    template_folder=_resource_path('templates'),
+    static_folder=_resource_path('static'),
+)
 app.config['MAX_CONTENT_LENGTH'] = 50 * 1024 * 1024
 
 UPLOAD_DIR = os.path.join(tempfile.gettempdir(), 'md_converter_uploads')

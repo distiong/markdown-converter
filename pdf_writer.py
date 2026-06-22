@@ -54,8 +54,11 @@ def _html_to_pdf_reportlab(html_content_or_path, output_path):
     flowables = parser.get_flowables()
 
     from reportlab.lib.pagesizes import A4
-    from reportlab.platypus import SimpleDocTemplate
+    from reportlab.platypus import SimpleDocTemplate, KeepInFrame
     from reportlab.lib.units import cm
+
+    page_width, page_height = A4
+    content_width = page_width - 4 * cm
 
     doc = SimpleDocTemplate(
         output_path,
@@ -65,7 +68,76 @@ def _html_to_pdf_reportlab(html_content_or_path, output_path):
         topMargin=2 * cm,
         bottomMargin=2 * cm
     )
-    doc.build(flowables)
+
+    processed = _post_process_flowables(flowables, content_width)
+    doc.build(processed)
+
+
+def _post_process_flowables(flowables, content_width):
+    from reportlab.platypus import KeepTogether, Spacer, Table, Image, Paragraph, Preformatted, Flowable
+
+    result = []
+    group = []
+
+    for f in flowables:
+        f_type = type(f).__name__
+
+        if f_type == 'Table':
+            if group:
+                result.append(KeepTogether(group))
+                group = []
+            _resize_table(f, content_width)
+            result.append(KeepTogether([f]))
+
+        elif f_type == 'Image':
+            if group:
+                result.append(KeepTogether(group))
+                group = []
+            _resize_image(f, content_width)
+            result.append(f)
+
+        elif f_type in ('Paragraph', 'Preformatted'):
+            style = getattr(f, 'style', None)
+            style_name = getattr(style, 'name', '') if style else ''
+
+            if 'Heading' in style_name:
+                if group:
+                    result.append(KeepTogether(group))
+                    group = []
+                result.append(f)
+                result.append(Spacer(1, 2))
+            else:
+                group.append(f)
+
+        elif f_type == 'HRFlowable':
+            if group:
+                result.append(KeepTogether(group))
+                group = []
+            result.append(f)
+
+        else:
+            group.append(f)
+
+    if group:
+        result.append(KeepTogether(group))
+
+    return result
+
+
+def _resize_image(img, content_width):
+    if hasattr(img, 'imageWidth') and img.imageWidth:
+        if img.imageWidth > content_width:
+            ratio = content_width / img.imageWidth
+            img.imageWidth = content_width
+            img.imageHeight = img.imageHeight * ratio
+
+
+def _resize_table(table, content_width):
+    if hasattr(table, '_colWidths') and table._colWidths:
+        total = sum(table._colWidths)
+        if total > content_width:
+            ratio = content_width / total
+            table._colWidths = [w * ratio for w in table._colWidths]
 
 
 def _get_font_name(bold=False, italic=False):
@@ -502,11 +574,27 @@ class _HTMLToReportLab(HTMLParser):
             from reportlab.platypus import Image
             from reportlab.lib.units import cm
             try:
-                img = Image(tmp.name, width=4 * cm, height=3 * cm)
-                img.hAlign = 'CENTER'
-                self._flush_text()
-                self.flowables.append(img)
+                from PIL import Image as PILImage
+                with PILImage.open(tmp.name) as pil_img:
+                    orig_w, orig_h = pil_img.size
+                    max_w = 15 * cm
+                    max_h = 20 * cm
+                    w = orig_w * 0.026458
+                    h = orig_h * 0.026458
+                    if w > max_w:
+                        ratio = max_w / w
+                        w = max_w
+                        h = h * ratio
+                    if h > max_h:
+                        ratio = max_h / h
+                        h = max_h
+                        w = w * ratio
+                    img = Image(tmp.name, width=w, height=h)
             except Exception:
-                self.current_text += f'[{alt}]'
+                img = Image(tmp.name, width=10 * cm, height=7.5 * cm)
+
+            img.hAlign = 'CENTER'
+            self._flush_text()
+            self.flowables.append(img)
         except Exception:
             self.current_text += f'[{alt}]'
