@@ -178,7 +178,7 @@ class _HTMLToReportLab(HTMLParser):
         ))
         self.styles.add(ParagraphStyle(
             'CJKCode', parent=self.styles['Normal'],
-            fontName='Courier', fontSize=9, leading=13,
+            fontName=base_font, fontSize=9, leading=14,
             spaceBefore=6, spaceAfter=6,
             backColor=colors.Color(0.95, 0.95, 0.95),
             leftIndent=12, rightIndent=12,
